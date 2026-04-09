@@ -1,0 +1,8 @@
+Flask
+opencv-python
+face-recognition
+numpy
+pandas
+openpyxl
+Werkzeug
+Flask-Login

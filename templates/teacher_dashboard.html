@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructor HUD | AI System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+
+    <div class="dashboard-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>AI SYSTEM</h2>
+                <p class="user-tag">INSTRUCTOR: <span>{{ current_user.name | upper }}</span></p>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link"><i class="fas fa-camera-retro"></i> <span>Live Scanner</span></a>
+                <a href="/dashboard" class="nav-link active"><i class="fas fa-chalkboard-teacher"></i> <span>My Classes</span></a>
+                </div>
+            <div class="sidebar-footer">
+                <a href="/logout" class="btn-logout"><i class="fas fa-power-off"></i> <span>Terminate</span></a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-text">
+                    <h1>Instructor Telemetry</h1>
+                    <p id="currentDateText" style="font-family: 'JetBrains Mono'; color: var(--accent);">SYNCING...</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-refresh" onclick="fetchTeacherData()">
+                        <i class="fas fa-sync"></i> SYNC_ROSTER
+                    </button>
+                    <div class="user-badge" style="background: rgba(155, 89, 182, 0.2); color: #9b59b6; border-color: #9b59b6;">
+                        {{ current_user.role | upper }}_MODE
+                    </div>
+                </div>
+            </header>
+
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <h3>My_Students</h3>
+                        <h2 id="totalStudents" class="stat-number">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card present">
+                    <div class="stat-icon"><i class="fas fa-check-double"></i></div>
+                    <div class="stat-info">
+                        <h3>Present_Today</h3>
+                        <h2 id="presentToday" class="stat-number">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card absent">
+                    <div class="stat-icon"><i class="fas fa-user-slash"></i></div>
+                    <div class="stat-info">
+                        <h3>Absent_Today</h3>
+                        <h2 id="absentToday" class="stat-number">0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="management-grid">
+                
+                <section class="card roster-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-satellite"></i> Active_Class_Modules</h3>
+                    </div>
+                    <div class="roster-container">
+                        <ul id="my_classes_list" class="modern-list">
+                            <li class="empty-msg"><i class="fas fa-circle-notch fa-spin"></i> Loading assigned classes...</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="card" id="roster_drill_down" style="display: none; border-color: var(--accent);">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 id="drill_class_name"><i class="fas fa-users"></i> Class Roster</h3>
+
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="date" id="roster_date_picker" class="modern-select" onchange="reloadDrillDownWithDate()" style="padding: 6px 10px; border-radius: 4px; background: #1a1d21; color: var(--accent); border: 1px solid var(--glass-border); font-family: 'JetBrains Mono'; cursor: pointer;">
+                            <button onclick="closeDrillDown()" class="btn-refresh" style="background: transparent; border: 1px solid var(--accent); color: var(--accent);">
+                                <i class="fas fa-times"></i> CLOSE
+                            </button>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid var(--glass-border);">
+                            <div style="font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--text-secondary);">ENROLLED</div>
+                            <div id="drill_total" style="font-weight: bold; font-size: 1.5rem; color: #fff;">0</div>
+                        </div>
+                        <div style="background: rgba(0,255,157,0.1); padding: 15px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid var(--success-glow);">
+                            <div style="font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--success);">PRESENT</div>
+                            <div id="drill_present" style="font-weight: bold; font-size: 1.5rem; color: var(--success);">0</div>
+                        </div>
+                        <div style="background: rgba(255,71,87,0.1); padding: 15px; border-radius: 8px; flex: 1; text-align: center; border: 1px solid var(--danger-glow);">
+                            <div style="font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--danger);">ABSENT</div>
+                            <div id="drill_absent" style="font-weight: bold; font-size: 1.5rem; color: var(--danger);">0</div>
+                        </div>
+                    </div>
+
+                    <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>IDENTITY</th>
+                                    <th>ROLL_NO</th>
+                                    <th>TIME_LOGGED</th>
+                                    <th>STATUS</th>
+                                    <th>ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drill_roster_body">
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="card logs-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-stream"></i> My_Activity_Logs</h3>
+                    </div>
+                    <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>TIME</th>
+                                    <th>IDENTITY</th>
+                                    <th>CLASS</th>
+                                    <th>STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </section>
+
+
+                <section class="card audit-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-chart-pie"></i> Student_Audit (75% Rule)</h3>
+                    </div>
+    
+                    <div class="modern-form" style="margin-bottom: 20px;">
+                        <select id="audit_class" class="modern-select" onchange="loadAuditStudents()">
+                            <option value="">-- 1. SELECT_CLASS --</option>
+                        </select>
+
+                        <button onclick="downloadClassReport()" class="btn-action success" style="margin-bottom: 10px;">
+                            <i class="fas fa-file-csv"></i> EXPORT_CLASS_SUMMARY
+                        </button>
+
+                        <select id="audit_student" class="modern-select" style="margin-top: 10px;">
+                            <option value="">-- 2. SELECT_STUDENT --</option>
+                        </select>
+                        <button onclick="generateAuditReport()" class="btn-action accent">RUN_DIAGNOSTIC</button>
+                    </div>
+
+                    <div id="audit_output" style="display: none; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                            <span style="color: var(--text-secondary); font-family: 'JetBrains Mono';">ATTENDANCE_RATIO:</span>
+                            <strong id="audit_ratio" style="font-family: 'JetBrains Mono';">0 / 0 Days</strong>
+                        </div>
+        
+                        <div style="width: 100%; background: #1a1d21; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 10px;">
+                            <div id="audit_bar" style="height: 100%; width: 0%; transition: width 1s ease-in-out;"></div>
+                        </div>
+        
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2 id="audit_percent" style="margin: 0; font-family: 'JetBrains Mono';">0%</h2>
+                            <span id="audit_status" class="status-tag">UNKNOWN</span>
+                        </div>
+
+                        <button onclick="downloadStudentReport()" class="btn-action" style="width: 100%; background: #2d323a; color: #fff;">
+                            <i class="fas fa-download"></i> EXPORT_DETAILED_LOGS
+                        </button>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDate();
+            setInterval(updateDate, 1000);
+            fetchTeacherData();
+            setInterval(fetchTeacherData, 60000); // Auto-refresh every minute
+        });
+
+        function updateDate() {
+            const dateEl = document.getElementById('currentDateText');
+            if (dateEl) {
+                const now = new Date();
+                const options = { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                dateEl.innerText = now.toLocaleString('en-US', options).toUpperCase().replace(/,/g, ' //');
+            }
+        }
+
+        async function fetchTeacherData() {
+            try {
+                const response = await fetch('/api/teacher_stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    // 1. Update Top Numbers
+                    document.getElementById('totalStudents').innerText = data.total_students;
+                    document.getElementById('presentToday').innerText = data.present_today;
+                    
+                    const absentCount = data.total_students - data.present_today;
+                    document.getElementById('absentToday').innerText = absentCount > 0 ? absentCount : 0;
+
+                    // 2. Render Assigned Classes List
+                    const classesList = document.getElementById('my_classes_list');
+                    if (data.classes.length === 0) {
+                        classesList.innerHTML = '<li class="empty-msg">No classes assigned to your profile.</li>';
+                    } else {
+                        classesList.innerHTML = data.classes.map(c => `
+                            <li onclick="openDrillDown('${c.id}', '${c.class_name}')" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--glass-border); cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='rgba(0,210,255,0.1)'" onmouseout="this.style.background='transparent'">
+                                <span><i class="fas fa-folder" style="color: var(--accent); margin-right: 10px;"></i> ${c.class_name}</span>
+                                <span class="roll-tag">${c.student_count} Enrolled <i class="fas fa-chevron-right" style="margin-left: 10px;"></i></span>
+                            </li>
+                        `).join('');
+                    }
+
+                    // 3. Render Logs
+                    const tbody = document.getElementById('attendanceTableBody');
+                    if (data.logs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">NO_ACTIVITY_DETECTED</td></tr>';
+                    } else {
+                        tbody.innerHTML = data.logs.map(log => `
+                            <tr>
+                                <td><code style="color: var(--accent); font-size: 0.75rem;">${log.Time}</code></td>
+                                <td><strong>${log.Name}</strong></td>
+                                <td><span class="roll-tag" style="background: rgba(155, 89, 182, 0.2); color: #9b59b6; border: 1px solid #9b59b6;">${log.ClassName}</span></td>
+                                <td><span class="status-tag"><i class="fas fa-check"></i> OK</span></td>
+                            </tr>
+                        `).join('');
+                    }
+
+                    const auditClassSelect = document.getElementById('audit_class');
+                    if (auditClassSelect.options.length <= 1) { // Only populate if empty
+                        data.classes.forEach(c => {
+                            auditClassSelect.innerHTML += `<option value="${c.id}">${c.class_name}</option>`;
+                        });
+                    }
+                
+                }
+            } catch (err) {
+                console.error(">>> [API_ERR]: Sync failed.", err);
+            }
+        }
+
+
+        async function loadAuditStudents() {
+            const classId = document.getElementById('audit_class').value;
+            const studentSelect = document.getElementById('audit_student');
+            studentSelect.innerHTML = '<option value="">-- LOADING_DATA --</option>';
+
+            if (!classId) return;
+
+            try {
+                const res = await fetch(`/api/get_students_by_class?class_id=${classId}`);
+                const data = await res.json();
+                if (data.success) {
+                    studentSelect.innerHTML = '<option value="">-- 2. SELECT_STUDENT --</option>';
+                    data.students.forEach(s => {
+                        studentSelect.innerHTML += `<option value="${s.roll_no}">${s.name} (${s.roll_no})</option>`;
+                    });
+                }
+            } catch(err) { console.error(err); }
+        }
+
+        // Generate the beautiful report
+        async function generateAuditReport() {
+            const classId = document.getElementById('audit_class').value;
+            const rollNo = document.getElementById('audit_student').value;
+
+            if (!classId || !rollNo) {
+                alert("Select both a class and a student to run diagnostic.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/student_report?class_id=${classId}&roll_no=${rollNo}`);
+                const data = await res.json();
+
+                if (data.success) {
+                    const r = data.report;
+                    document.getElementById('audit_output').style.display = 'block';
+            
+                    document.getElementById('audit_ratio').innerText = `${r.days_present} / ${r.total_active_days} Sessions`;
+                    document.getElementById('audit_percent').innerText = `${r.percentage}%`;
+            
+                    const bar = document.getElementById('audit_bar');
+                    const status = document.getElementById('audit_status');
+            
+                    bar.style.width = `${r.percentage}%`;
+                    status.innerText = r.status;
+
+                    // Apply conditional HUD colors!
+                    if (r.percentage >= 75) {
+                        bar.style.background = 'var(--success)';
+                        document.getElementById('audit_percent').style.color = 'var(--success)';
+                        status.style.color = '#000';
+                        status.style.background = 'var(--success)';
+                    } else {
+                        bar.style.background = 'var(--danger)';
+                        document.getElementById('audit_percent').style.color = 'var(--danger)';
+                        status.style.color = '#fff';
+                        status.style.background = 'var(--danger)';
+                    }
+                }
+            } catch(err) { console.error(err); }
+        }
+
+        // Trigger the Class Summary CSV Download
+        function downloadClassReport() {
+            const classId = document.getElementById('audit_class').value;
+            if (!classId) {
+                alert("Please select a class first to export the summary.");
+                return;
+            }
+            // Setting window.location.href automatically triggers a file download without leaving the page
+            window.location.href = `/api/export_class_report?class_id=${classId}`;
+        }
+
+        // Trigger the Detailed Student Logs CSV Download
+        function downloadStudentReport() {
+            const classId = document.getElementById('audit_class').value;
+            const rollNo = document.getElementById('audit_student').value;
+    
+            if (!classId || !rollNo) {
+                alert("Please run a diagnostic on a student first.");
+                return;
+            }
+            window.location.href = `/api/export_student_report?class_id=${classId}&roll_no=${rollNo}`;
+        }
+
+
+        // Global variables to remember what the teacher is currently looking at
+        let currentDrillClassId = null;
+        let currentDrillClassName = "";
+
+        async function openDrillDown(classId, className) {
+            currentDrillClassId = classId;
+            currentDrillClassName = className;
+    
+            document.getElementById('drill_class_name').innerHTML = `<i class="fas fa-users"></i> ${className} - Roster`;
+            document.getElementById('roster_drill_down').style.display = 'block';
+    
+            // Set the calendar to TODAY's date by default when they first click a class
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('roster_date_picker').value = today;
+
+            // Fetch the data
+            await fetchAndRenderDrillDown(classId, today);
+        }
+
+        // Triggered automatically when the teacher changes the date in the calendar
+        async function reloadDrillDownWithDate() {
+            if (!currentDrillClassId) return;
+            const selectedDate = document.getElementById('roster_date_picker').value;
+            await fetchAndRenderDrillDown(currentDrillClassId, selectedDate);
+        }
+
+        // The core engine that fetches the data from your Flask backend
+        async function fetchAndRenderDrillDown(classId, dateStr) {
+            const tbody = document.getElementById('drill_roster_body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;"><i class="fas fa-circle-notch fa-spin"></i> SYNCING_ROSTER...</td></tr>';
+
+            try {
+                // ⚡ Notice how we now send the specific dateStr to Python!
+                const res = await fetch(`/api/class_roster_status?class_id=${classId}&date=${dateStr}`);
+                const result = await res.json();
+
+                if (result.success) {
+                    const data = result.data;
+                    document.getElementById('drill_total').innerText = data.total_enrolled;
+                    document.getElementById('drill_present').innerText = data.present_count;
+                    document.getElementById('drill_absent').innerText = data.absent_count;
+
+                    tbody.innerHTML = data.roster.map(s => {
+                        const isPresent = s.status === 'PRESENT';
+                        const color = isPresent ? 'var(--success)' : 'var(--danger)';
+                        const bg = isPresent ? 'rgba(0,255,157,0.1)' : 'rgba(255,71,87,0.1)';
+                        const overrideBtn = isPresent
+                            ? `<button onclick="triggerOverride('${s.roll_no}', 'ABSENT')" class="btn-action" style="background: rgba(255,71,87,0.2); color: var(--danger); border: 1px solid var(--danger); font-size: 0.6rem; padding: 4px 8px;"><i class="fas fa-undo"></i> REVOKE</button>`
+                            : `<button onclick="triggerOverride('${s.roll_no}', 'PRESENT')" class="btn-action" style="background: rgba(0,210,255,0.2); color: var(--accent); border: 1px solid var(--accent); font-size: 0.6rem; padding: 4px 8px;"><i class="fas fa-user-shield"></i> EXCUSE</button>`;
+                        return `
+                        <tr>
+                            <td><strong>${s.name}</strong></td>
+                            <td><code style="color: var(--accent);">${s.roll_no}</code></td>
+                            <td><span style="font-family: 'JetBrains Mono'; font-size: 0.8rem;">${s.time}</span></td>
+                            <td>
+                                <span style="background: ${bg}; color: ${color}; border: 1px solid ${color}; padding: 4px 8px; border-radius: 4px; font-family: 'JetBrains Mono'; font-size: 0.7rem; font-weight: bold;">
+                                    ${isPresent ? '<i class="fas fa-check"></i> PRESENT' : '<i class="fas fa-times"></i> ABSENT'}
+                                </span>
+                            </td>
+                            <td>${overrideBtn}</td>
+    
+                        
+                        </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--danger);">COMM_FAILURE</td></tr>';
+            }
+        }
+        
+        function closeDrillDown() {
+            document.getElementById('roster_drill_down').style.display = 'none';
+        }
+
+
+        // ⚡ NEW: Function to send the manual override command to Python
+        async function triggerOverride(rollNo, action) {
+            const selectedDate = document.getElementById('roster_date_picker').value;
+    
+            // Quick confirmation if the teacher is revoking attendance
+            if (action === 'ABSENT') {
+                if(!confirm(`Are you sure you want to REVOKE attendance for Roll ${rollNo}?`)) return;
+            }
+
+            try {
+                const res = await fetch('/api/manual_override', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        roll_no: rollNo,
+                        class_id: currentDrillClassId,
+                        date: selectedDate,
+                        action: action
+                    })
+                });
+        
+                const result = await res.json();
+                if (result.success) {
+                    // Instantly reload the table to reflect the new changes!
+                    reloadDrillDownWithDate();
+                } else {
+                    alert(result.message);
+                }
+            } catch (err) {
+                console.error("Override failed:", err);
+                alert("COMM_FAILURE: Could not execute override.");
+            }
+        }
+    </script>
+</body>
+</html>

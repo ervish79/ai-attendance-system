@@ -1,0 +1,334 @@
+/* =========================================
+   1. GLOBAL RESET & GLASS VARIABLES
+   ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg-dark: #0a0c10; /* Deeper black for better contrast */
+    --glass-bg: rgba(26, 29, 33, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    
+    --accent: #00d2ff;
+    --accent-glow: rgba(0, 210, 255, 0.4);
+    
+    --success: #00ff9d; /* Neon Green */
+    --success-glow: rgba(0, 255, 157, 0.3);
+    
+    --danger: #ff4757; /* Neon Red */
+    --danger-glow: rgba(255, 71, 87, 0.4);
+    
+    --sidebar-width: 280px;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-dark);
+    background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 210, 255, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 0% 100%, rgba(0, 255, 157, 0.03) 0%, transparent 40%);
+    color: var(--text-primary);
+    overflow: hidden; /* Main wrapper handles scrolling */
+}
+
+/* =========================================
+   2. SIDEBAR (Glassmorphism Style)
+   ========================================= */
+.sidebar {
+    width: 280px !important;
+    min-width: 280px !important;
+    flex-shrink: 0 !important;
+    background: rgba(13, 15, 18, 0.98);
+    backdrop-filter: blur(20px);
+    height: 100vh;
+    border-right: 1px solid var(--glass-border);
+    padding: 40px 25px;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.sidebar h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: linear-gradient(to right, var(--accent), #fff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 3px;
+    margin-bottom: 5px;
+}
+
+.user-tag {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 14px 18px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.nav-link:hover {
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateX(5px);
+}
+
+.nav-link.active {
+    background: linear-gradient(90deg, var(--accent), #00a2ff);
+    color: #000;
+    font-weight: 700;
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* =========================================
+   3. MASTER HUD & SCANNER (The Iron Man Look)
+   ========================================= */
+.scanner-wrapper {
+    position: relative;
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    overflow: hidden;
+    background: #000;
+}
+
+/* Animated Scan Line */
+.scan-line {
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(to right, transparent, var(--accent), transparent);
+    box-shadow: 0 0 15px var(--accent);
+    z-index: 10;
+    animation: scanMove 3s ease-in-out infinite;
+}
+
+@keyframes scanMove {
+    0% { top: 0%; opacity: 0; }
+    50% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+/* HUD Telemetry Text */
+.hud-telemetry {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.4);
+    padding: 5px 10px;
+    border-radius: 4px;
+    z-index: 20;
+    border: 1px solid rgba(0, 210, 255, 0.2);
+    pointer-events: none;
+}
+
+.hud-telemetry.top-left { top: 25px; left: 25px; }
+.hud-telemetry.top-right { top: 25px; right: 25px; text-align: right; }
+
+/* Corner Brackets Animation */
+.corner-bracket {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--accent);
+    z-index: 20;
+    transition: all 0.3s ease;
+}
+
+.scanner-wrapper.success .corner-bracket { border-color: var(--success); filter: drop-shadow(0 0 10px var(--success)); }
+.scanner-wrapper.alert .corner-bracket { border-color: var(--danger); filter: drop-shadow(0 0 10px var(--danger)); }
+
+/* =========================================
+   4. GLASS CARDS & STATS
+   ========================================= */
+/* .card, .stat-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+} */
+
+.stat-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+}
+
+.stat-icon {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+    box-shadow: inset 0 0 10px rgba(255,255,255,0.05);
+}
+
+.stat-number {
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(to bottom, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* =========================================
+   5. INTERACTIVE BUTTONS
+   ========================================= */
+.btn-action {
+    position: relative;
+    overflow: hidden;
+    transition: 0.3s;
+}
+
+.btn-action::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: 0.5s;
+}
+
+.btn-action:hover::after {
+    left: 100%;
+}
+
+/* =========================================
+   6. CUSTOM SCROLLBAR
+   ========================================= */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2d323a;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* EMERGENCY VISIBILITY FIX */
+.dashboard-wrapper {
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    background: var(--bg-dark);
+}
+
+.main-content {
+    flex: 1 !important;
+    height: 100vh !important;
+    overflow-y: auto !important;
+    position: relative !important;
+    display: block !important; /* Ensure it's not display:none */
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 1 !important;
+}
+
+/* =========================================
+   CORE LAYOUT REPAIR - STOP THE SQUASH 
+   ========================================= */
+
+.main-content {
+    flex-grow: 1 !important;
+    flex-shrink: 1 !important;
+    min-width: 0; /* Important for flex-basis calculation */
+    padding: 40px;
+    height: 100vh;
+    overflow-y: auto;
+    background: transparent;
+    display: block !important;
+}
+
+/* 1. Force a solid 2-column layout */
+.scanner-grid {
+    display: flex !important;
+    flex-wrap: nowrap !important; /* Prevents wrapping which causes squashing */
+    gap: 30px;
+    width: 100%;
+    margin-top: 30px;
+}
+
+/* 2. The Camera Side (The "Grower") */
+.scanner-container {
+    flex: 1 1 auto; /* Grow to fill space, but don't shrink below content */
+    min-width: 500px; /* NEVER let the camera get smaller than this */
+}
+
+/* 3. The Camera Box itself */
+.scanner-wrapper {
+    position: relative;
+    width: 100%;
+    height: 480px; /* Fixed height for stability */
+    background: #000;
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+}
+
+#ai-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Keeps the face from looking stretched */
+}
+
+/* 4. The Info Side (The "Fixed" Panel) */
+.info-panel {
+    width: 380px; /* Solid width for the result cards */
+    flex-shrink: 0; /* NEVER let the cards get squashed */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 5. Fix for that vertically squashed Select Box */
+.modern-select {
+    width: 100%;
+    height: 45px; /* Forced height */
+    background: #1a1d21 !important;
+    border: 1px solid var(--glass-border);
+    color: var(--accent);
+    padding: 0 15px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    appearance: auto; /* Restores the dropdown arrow */
+}
+
+.class-selector-box label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}

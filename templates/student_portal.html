@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal | AI System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+        .portal-wrapper { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .kiosk-card { background: var(--bg-card); padding: 40px; border-radius: 12px; border: 1px solid var(--glass-border); width: 100%; max-width: 500px; text-align: center; }
+        .dashboard-container { display: none; width: 100%; max-width: 1000px; margin: 40px auto; }
+        .class-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+        .class-card { background: var(--bg-card); padding: 20px; border-radius: 8px; border: 1px solid var(--glass-border); transition: 0.3s; }
+        .class-card:hover { border-color: var(--accent); transform: translateY(-5px); }
+        .log-list { max-height: 150px; overflow-y: auto; margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="portal-wrapper" id="login_screen">
+        <div class="kiosk-card">
+            <i class="fas fa-user-graduate" style="font-size: 3rem; color: var(--accent); margin-bottom: 20px;"></i>
+            <h2>Student Telemetry Portal</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 30px;">Enter your Unique Roll Number to access your attendance records.</p>
+            
+            <input type="text" id="student_roll_input" class="modern-input" placeholder="e.g. 101" style="text-align: center; font-size: 1.2rem; letter-spacing: 2px;">
+            <button onclick="fetchStudentData()" class="btn-action success" style="margin-top: 20px; width: 100%;">ACCESS_RECORDS</button>
+            <div id="error_msg" style="color: var(--danger); margin-top: 15px; font-family: 'JetBrains Mono'; display: none;"></div>
+        </div>
+    </div>
+
+    <div class="dashboard-container" id="dashboard_screen">
+        <header class="page-header" style="justify-content: space-between; margin-bottom: 30px;">
+            <div>
+                <h1 id="s_name_display">Student Name</h1>
+                <p style="font-family: 'JetBrains Mono'; color: var(--accent);">ROLL_NO: <span id="s_roll_display"></span></p>
+            </div>
+            <button onclick="logoutKiosk()" class="btn-refresh" style="border-color: var(--danger); color: var(--danger);">
+                <i class="fas fa-power-off"></i> END_SESSION
+            </button>
+        </header>
+
+        <h2><i class="fas fa-satellite"></i> Active Enrollments</h2>
+        <div class="class-grid" id="class_grid_container">
+            </div>
+    </div>
+
+    <script>
+        async function fetchStudentData() {
+            const rollNo = document.getElementById('student_roll_input').value.trim();
+            const errorDiv = document.getElementById('error_msg');
+            if (!rollNo) return;
+
+            errorDiv.style.display = 'none';
+            document.querySelector('.btn-action').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> LOCATING...';
+
+            try {
+                const res = await fetch(`/api/get_student_dashboard?roll_no=${rollNo}`);
+                const result = await res.json();
+
+                if (result.success) {
+                    // Switch Screens
+                    document.getElementById('login_screen').style.display = 'none';
+                    document.getElementById('dashboard_screen').style.display = 'block';
+
+                    const data = result.data;
+                    document.getElementById('s_name_display').innerText = data.student_name;
+                    document.getElementById('s_roll_display').innerText = data.roll_no;
+
+                    // Render Classes
+                    const grid = document.getElementById('class_grid_container');
+                    if (data.classes.length === 0) {
+                        grid.innerHTML = '<p style="color: var(--text-secondary);">You are not currently enrolled in any active classes.</p>';
+                        return;
+                    }
+
+                    grid.innerHTML = data.classes.map(c => {
+                        const s = c.stats;
+                        const isEligible = s.percentage >= 75;
+                        const barColor = isEligible ? 'var(--success)' : 'var(--danger)';
+
+                        // Map out the detailed logs
+                        const logsHtml = s.history.length > 0 
+                            ? s.history.map(log => `
+                                <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono'; font-size: 0.8rem; border-bottom: 1px solid var(--glass-border); padding: 5px 0;">
+                                    <span>${log.date}</span>
+                                    <span style="color: var(--success);"><i class="fas fa-check"></i> ${log.time}</span>
+                                </div>
+                              `).join('')
+                            : `<div style="text-align: center; color: var(--danger); font-size: 0.8rem;">NO ATTENDANCE LOGGED</div>`;
+
+                        return `
+                        <div class="class-card">
+                            <h3 style="margin-bottom: 5px; color: #fff;">${c.class_name}</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;"><i class="fas fa-chalkboard-teacher"></i> Instructor: ${c.teacher_name || 'TBA'}</p>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 5px;">
+                                <span style="font-family: 'JetBrains Mono'; font-size: 0.8rem;">${s.days_present} / ${s.total_active_days} Sessions</span>
+                                <h2 style="margin: 0; font-family: 'JetBrains Mono'; color: ${barColor};">${s.percentage}%</h2>
+                            </div>
+                            
+                            <div style="width: 100%; background: #1a1d21; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 15px;">
+                                <div style="height: 100%; width: ${s.percentage}%; background: ${barColor};"></div>
+                            </div>
+                            
+                            <h4 style="font-size: 0.8rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 5px; margin-bottom: 5px;">Recent Logs</h4>
+                            <div class="log-list">
+                                ${logsHtml}
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+
+                } else {
+                    errorDiv.innerText = result.message;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.innerText = "Connection Failed.";
+                errorDiv.style.display = 'block';
+            } finally {
+                document.querySelector('.btn-action').innerHTML = 'ACCESS_RECORDS';
+            }
+        }
+
+        function logoutKiosk() {
+            document.getElementById('student_roll_input').value = '';
+            document.getElementById('dashboard_screen').style.display = 'none';
+            document.getElementById('login_screen').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

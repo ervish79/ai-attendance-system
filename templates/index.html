@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live AI Scanner | Command Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+
+    <div class="dashboard-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>AI SYSTEM</h2>
+                <p class="user-tag">ROOT_ACCESS: <span>{{ current_user.name | upper }}</span></p>
+            </div>
+
+            <div class="nav-links">
+                <a href="/" class="nav-link active">
+                    <i class="fas fa-camera-retro"></i> <span>Live Scanner</span>
+                </a>
+                <a href="/dashboard" class="nav-link">
+                    <i class="fas fa-layer-group"></i> <span>Data Center</span>
+                </a>
+                <a href="/register_student" class="nav-link">
+                    <i class="fas fa-user-shield"></i> <span>Enrollment</span>
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="/logout" class="btn-logout">
+                    <i class="fas fa-power-off"></i> <span>Terminate</span>
+                </a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-text">
+                    <h1>Biometric Identification</h1>
+                    <p>CORE_STATUS: <span id="system-ready-text" class="status-online" style="color: #00ff9d; font-family: 'JetBrains Mono';">NEURAL_NET_READY</span></p>
+                </div>
+            </header>
+
+            <div class="scanner-grid" style="display: grid; grid-template-columns: 1fr 350px; gap: 30px;">
+                <div class="scanner-container">
+                    <div class="class-selector-box card" style="margin-bottom: 20px;">
+                        <label for="activeClass" style="font-family: 'JetBrains Mono'; font-size: 0.8rem; color: var(--accent);"><i class="fas fa-satellite-dish"></i> ACTIVE_SESSION:</label>
+                        <select id="activeClass" class="modern-select mini" style="margin-left: 10px;">
+                            <option value="">-- INITIALIZE CLASS --</option>
+                        </select>
+                    </div>
+
+                    <div class="scanner-wrapper" id="visual-frame" style="position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border); background: #000; min-height: 480px;">
+                        <div class="scan-line"></div>
+                        
+                        <div class="hud-telemetry top-left" style="position: absolute; top: 15px; left: 15px; font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--accent); z-index: 10;">
+                            SYS_LOAD: 14.2% <br> 
+                            AI_ENGINE: VER_3.0_FLASH
+                        </div>
+                        <div class="hud-telemetry top-right" style="position: absolute; top: 15px; right: 15px; font-family: 'JetBrains Mono'; font-size: 0.7rem; color: var(--accent); z-index: 10; text-align: right;">
+                            LATENCY: 0.04ms <br> 
+                            SENSORS: ACTIVE
+                        </div>
+
+                        <img id="ai-feed" src="" alt="WAITING_FOR_STREAM" style="width: 100%; height: 100%; object-fit: cover;">
+                        
+                        <div class="hud-overlay">
+                            <div class="corner-bracket top-left"></div>
+                            <div class="corner-bracket top-right"></div>
+                            <div class="corner-bracket bottom-left"></div>
+                            <div class="corner-bracket bottom-right"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="info-panel">
+                    <div class="card status-card" style="margin-bottom: 20px;">
+                        <h3><i class="fas fa-bolt"></i> Engine Telemetry</h3>
+                        <p id="engine-mode" style="font-family: 'JetBrains Mono'; font-size: 0.8rem; color: var(--accent);">STBY_MODE</p>
+                    </div>
+
+                    <div class="card result-card" id="result-box" style="margin-bottom: 20px; border-color: var(--glass-border);">
+                        <h3><i class="fas fa-fingerprint"></i> Identity Match</h3>
+                        <div id="detected-list" style="margin-top: 15px; max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                            <div style="text-align: center; color: var(--text-secondary); font-family: 'JetBrains Mono'; font-size: 0.8rem; padding: 20px 0;">SCANNING_AREA...</div>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="control-btns" style="display: flex; flex-direction: column; gap: 15px;">
+                        <button id="stop-btn" class="btn-stop btn-action" disabled style="padding: 15px; width: 100%; background: #2d323a; color: #fff;">
+                            <i class="fas fa-times-circle"></i> HALT_PROCESS
+                        </button>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <video id="rawVideo" style="display: none;" autoplay playsinline></video>
+    <canvas id="hidden-canvas" style="display: none;" width="640" height="480"></canvas>
+    <div id="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

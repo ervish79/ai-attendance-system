@@ -1,0 +1,16 @@
+# Python caches
+__pycache__/
+*.pyc
+
+# Virtual Environments
+venv/
+env/
+
+# Database (Do not upload real student data!)
+attendance.db
+
+# Biometric Dataset (Do not upload real faces!)
+dataset/
+
+# Environment Variables (For future API keys)
+.env

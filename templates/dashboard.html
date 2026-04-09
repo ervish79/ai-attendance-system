@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Command Center | AI System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="dashboard-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>AI SYSTEM</h2>
+                <p class="user-tag">ROOT_ACCESS: <span>{{ current_user.name | upper }}</span></p>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link"><i class="fas fa-camera-retro"></i> <span>Live Scanner</span></a>
+                <a href="/dashboard" class="nav-link active"><i class="fas fa-layer-group"></i> <span>Data Center</span></a>
+                <a href="/register_student" class="nav-link"><i class="fas fa-user-shield"></i> <span>Enrollment</span></a>
+            </div>
+            <div class="sidebar-footer">
+                <a href="/logout" class="btn-logout"><i class="fas fa-power-off"></i> <span>Terminate</span></a>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-text">
+                    <h1>Operational Intelligence</h1>
+                    <p id="currentDateText" style="font-family: 'JetBrains Mono'; color: var(--accent);">SYNCING_TIME_PROTOCOLS...</p>
+                </div>
+                <div class="header-actions">
+                    <button id="refreshBtn" class="btn-refresh" onclick="refreshDashboard()">
+                        <i class="fas fa-sync"></i> REFRESH_DB
+                    </button>
+                    <div class="user-badge">{{ current_user.role | upper }}_MODE</div>
+                </div>
+            </header>
+
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <div class="stat-icon"><i class="fas fa-database"></i></div>
+                    <div class="stat-info">
+                        <h3>Registry_Total</h3>
+                        <h2 id="totalStudents" class="stat-number">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card present">
+                    <div class="stat-icon"><i class="fas fa-check-double"></i></div>
+                    <div class="stat-info">
+                        <h3>Active_Present</h3>
+                        <h2 id="presentToday" class="stat-number">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card absent">
+                    <div class="stat-icon"><i class="fas fa-user-slash"></i></div>
+                    <div class="stat-info">
+                        <h3>Offline_Units</h3>
+                        <h2 id="absentToday" class="stat-number">0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="management-grid">
+                <section class="chart-section card">
+                    <h3><i class="fas fa-wave-square"></i> Attendance_Trend_Analysis</h3>
+                    <div class="chart-container" style="position: relative; height:250px; width:100%; margin-top: 20px;">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                </section>
+
+                <section class="roster-section card">
+                    <div class="section-header">
+                        <h3><i class="fas fa-satellite"></i> Class_Roster_Sync</h3>
+                        <select id="roster_class_select" class="modern-select mini">
+                            <option value="">-- SELECT_CLASS --</option>
+                        </select>
+                    </div>
+                    <div class="roster-container">
+                        <ul id="roster_list" class="modern-list">
+                            <li class="empty-msg">Waiting for class selection...</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
+            <section class="logs-section card" style="margin-top: 30px;">
+                <div class="section-header">
+                    <h2><i class="fas fa-stream"></i> Real-Time_Activity_Logs</h2>
+                </div>
+                <div class="table-container">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th><i class="far fa-clock"></i> TIMESTAMP</th>
+                                <th><i class="far fa-user"></i> IDENTITY</th>
+                                <th><i class="fas fa-hashtag"></i> UNIT_ID</th>
+                                <th><i class="fas fa-signal"></i> STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            {% if current_user.role == 'admin' %}
+            <div class="management-divider"><span>System_Administration</span></div>
+            <div class="management-grid">
+                
+                <div class="card manage-card">
+                    <h3><i class="fas fa-user-plus"></i> New_Auth_Teacher</h3>
+                    <form id="teacherForm" class="modern-form">
+                        <input type="text" id="t_name" placeholder="FULL NAME" required>
+                        <input type="text" id="t_user" placeholder="USERNAME" required>
+                        <input type="password" id="t_pass" placeholder="SECURITY KEY" required>
+                        <button type="submit" class="btn-action primary">REGISTER_USER</button>
+                    </form>
+                </div>
+                
+                <div class="card manage-card">
+                    <h3><i class="fas fa-folder-plus"></i> New_Class_Index</h3>
+                    <form id="classForm" class="modern-form">
+                        <input type="text" id="c_name" placeholder="CLASS LABEL" required>
+                        <select id="c_teacher" class="modern-select">
+                            <option value="">-- ASSIGN_TEACHER --</option>
+                        </select>
+                        <div style="display: flex; gap: 10px">
+                            <input type="time" id="c_start" required style="flex: 1;" title="Start Time">
+                            <input type="time" id="c_end" required style="flex: 1;" title="End Time">
+                        </div>
+                        <button type="submit" class="btn-action success">INIT_INDEX</button>
+                    </form>
+                </div>
+
+
+                <div class="card manage-card" style="border-color: #f39c12;">
+                    <h3><i class="fas fa-edit" style="color: #f39c12;"></i> Modify_Class_Schedule</h3>
+                    <form id="editClassForm" class="modern-form">
+                        
+                        <select id="edit_c_select" class="modern-select" onchange="populateEditForm()">
+                            <option value="">-- SELECT_CLASS_TO_EDIT --</option>
+                        </select>
+                        
+                        <input type="text" id="edit_c_name" placeholder="NEW CLASS LABEL" required>
+                        
+                        <select id="edit_c_teacher" class="modern-select">
+                            <option value="">-- REASSIGN_TEACHER --</option>
+                        </select>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <input type="time" id="edit_c_start" required style="flex: 1;" title="Start Time">
+                            <input type="time" id="edit_c_end" required style="flex: 1;" title="End Time">
+                        </div>
+                        
+                        <button type="submit" class="btn-action" style="background: #f39c12; color: #000;">UPDATE_SCHEDULE</button>
+                    </form>
+                </div>
+                
+                <div class="card manage-card">
+                    <h3><i class="fas fa-link"></i> Biometric_Link</h3>
+                    <form id="enrollmentForm" class="modern-form">
+                        <select id="e_student" class="modern-select">
+                            <option value="">-- SELECT_STUDENT --</option>
+                        </select>
+                        <select id="e_class" class="modern-select">
+                            <option value="">-- SELECT_CLASS --</option>
+                        </select>
+                        <button type="submit" class="btn-action accent">MAP_STUDENT</button>
+                    </form>
+                </div>
+
+
+                <div class="card manage-card" style="border-color: #ff4757;">
+                    <h3><i class="fas fa-user-slash" style="color: #ff4757;"></i> Terminate Profile</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 15px;">Warning: This action permanently erases the student, their enrollments, and all historical attendance data.</p>
+                    
+                    <form id="removeStudentForm" class="modern-form">
+                        <label style="color: #ff4757; font-family: 'JetBrains Mono'; font-size: 0.8rem;">Target Roll Number</label>
+                        <input type="text" id="remove_roll_no" placeholder="Enter Roll Number to Delete" required style="border-color: rgba(255, 71, 87, 0.3);">
+                        
+                        <button type="submit" class="btn-action" style="background: #ff4757; color: #fff; margin-top: 15px;">
+                            <i class="fas fa-skull-crossbones"></i> EXECUTE_PURGE
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+            {% endif %}
+        </main>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
